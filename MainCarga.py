@@ -12,9 +12,9 @@ START_TIME = "07:45"  # Hora de inicio de operaciones (HH:MM)
 
 # Carga de datos desde CSV
 script_dir = os.path.dirname(os.path.abspath(__file__))
-pa1   = os.path.join(script_dir, 'clients.csv')
+pa1   = os.path.join(script_dir, 'clients_caso_3.csv')
 pa2   = os.path.join(script_dir, 'depots.csv')
-pa3   = os.path.join(script_dir, 'vehicles.csv')
+pa3   = os.path.join(script_dir, 'vehicles_caso_3.csv')
 clients_df = pd.read_csv(pa1)
 depots_df = pd.read_csv(pa2)
 vehicles_df = pd.read_csv(pa3)
@@ -63,7 +63,7 @@ coordenadas = build_coordinates()
 vehiculos_info = {}
 for _, row in vehicles_df.iterrows():
     vid = str(row['VehicleID'])
-    tipo = 'Dron' if not pd.isna(row.get('Speed')) else 'Camioneta'
+    tipo = 'Camioneta'
     vehiculos_info[vid] = {
         'tipo': tipo,
         'capacidad': float(row['Capacity']),
@@ -111,6 +111,7 @@ tiempos_viaje = np.zeros((n, n, Vehiculos))
 matriz_distancias = np.zeros((n, n, Vehiculos))
 
 for k, vid in enumerate(Nombre_vehiculo):
+    Speed = 80  # Ignorar cualquier valor anterior, usamos velocidad fija
     tipo = vehiculos_info[vid]['tipo']
     cap = vehiculos_info[vid]['capacidad']
     rng = vehiculos_info[vid]['rango']
@@ -125,9 +126,8 @@ for k, vid in enumerate(Nombre_vehiculo):
                 # Cálculo de costo usando los valores fijos originales
                 costo_unitario = Pf + Ft + Cm + Seguros + Peajes + Salarios
                 cost[i-1, j-1, k] = d * costo_unitario * factor_cost
-                # Cálculo de tiempo (en horas)
-                speed = vehicles_df.loc[vehicles_df['VehicleID'] == int(vid), 'Speed'].values
-                velocidad = float(speed[0]) if speed.size and not pd.isna(speed[0]) else 60
+                # Cálculo de tiempo (en horas) usando velocidad fija
+                velocidad = 80  # velocidad constante
                 tiempos_viaje[i-1, j-1, k] = round((d / velocidad) * factor_time, 2)
                 #if i <= n_initial and j <= n_initial:
                     #print("El tiempo de viaje entre el nodo", i, "y el nodo", j, "es:", round(tiempos_viaje[i-1, j-1, k]*60, 2), "minutos para el vehículo", vid)
@@ -142,27 +142,9 @@ matriz_distancias = matriz_distancias.tolist()
 Capacidad_util = {k+1: vehiculos_info[vid]['capacidad'] for k, vid in enumerate(Nombre_vehiculo)}
 Distancia_util = {k+1: vehiculos_info[vid]['rango'] for k, vid in enumerate(Nombre_vehiculo)}
 
-# Construcción de ventanas de tiempo
-# Nodo 1: inicio 0, fin 12:00 PM
-start_h, start_m = map(int, START_TIME.split(':'))
-start_min = start_h * 60 + start_m
 ventanas_tiempo = {}
-ventanas_tiempo[1] = (0, 12 * 60)
-# Clientes: ventanas relativas desde START_TIME
-def parse_tw(tw_str):
-    s_str, e_str = tw_str.split('-')
-    sh, sm = map(int, s_str.split(':'))
-    eh, em = map(int, e_str.split(':'))
-    return (sh * 60 + sm, eh * 60 + em)
-for idx, row in clients_df.iterrows():
-    node = n_depots + idx + 1
-    tw_start, tw_end = parse_tw(row['TimeWindow'])
-    rel_start = max(0, tw_start - start_min)
-    rel_end = max(0, tw_end - start_min)
-    ventanas_tiempo[node] = (rel_start, rel_end)
-# Nodos de reabastecimiento: misma ventana que CD
-for node in nodo_reabastecimiento:
-    ventanas_tiempo[node] = ventanas_tiempo[1]
+for node in range(1, n + 1):
+    ventanas_tiempo[node] = (0, 1440)  # ventana abierta todo el día (en minutos)
 
 print(ventanas_tiempo)
 

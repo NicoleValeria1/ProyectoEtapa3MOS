@@ -25,8 +25,8 @@ def load_data(folder: str = '.') -> tuple:
 
     try:
         ddf = pd.read_csv(os.path.join(folder, 'depots.csv'))
-        cdf = pd.read_csv(os.path.join(folder, 'clients.csv'))
-        vdf = pd.read_csv(os.path.join(folder, 'vehicles.csv'))
+        cdf = pd.read_csv(os.path.join(folder, 'clients_caso_3.csv'))
+        vdf = pd.read_csv(os.path.join(folder, 'vehicles_caso_3.csv'))
     except FileNotFoundError as e:
         print('CSV no encontrado →', e)
         sys.exit(1)
